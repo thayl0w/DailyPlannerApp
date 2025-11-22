@@ -1,0 +1,21 @@
+{
+  "name": "daily-planner-app",
+  "version": "1.0.0",
+  "description": "Daily Planner web application with JSON database",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "planner",
+    "calendar",
+    "notes"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "body-parser": "^1.20.2",
+    "express": "^4.21.2"
+  }
+}

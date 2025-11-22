@@ -1,0 +1,14 @@
+# Node modules
+node_modules/
+
+# Database file
+data/database.json
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
