@@ -1,100 +1,54 @@
-Overview
+# Overview
 
-The Daily Planner is a web application I built to strengthen my skills in front-end web development while solving a practical problem: helping users organize their daily tasks, notes, and schedules in one place. The application provides an interactive monthly calendar, hourly scheduling, task lists, and notes with reminders. All data is stored locally in the browser, allowing users to access their plans offline without needing a server or database.
+The Personal Finance Manager is a web application I developed to practice and strengthen my full-stack development skills while creating a tool that helps users manage their finances more easily. The application lets users create an account, log in securely, and track their income, expenses, budgets, and savings goals. All data is stored in a cloud-hosted database so users can access their records anytime.
 
-The program is simple to use:
+The program workflow is straightforward:  
+1. Create an account or log in with your existing credentials.  
+2. Add income and expense entries to track your financial activity.  
+3. Set budgets and savings goals.  
+4. View summaries such as total income, total expenses, remaining balance, and savings progress.
 
-Open the calendar and select any day to begin planning.
+I built this software to improve my understanding of full-stack development using Node.js and Express, and to gain real experience working with MongoDB Atlas for cloud database storage and retrieval.
 
-Add notes, tasks, or hourly schedules for that specific date.
+<!-- [Software Demo Video](http://youtube.link.goes.here) -->
 
-Mark tasks as complete, urgent, or edit/delete them at any time.
+# Cloud Database
 
-View all notes in the timeline, check monthly summaries, or switch between themes and dark mode.
+This project uses **MongoDB Atlas** as its cloud database solution. Using Atlas’ free-tier cluster, the application stores and retrieves financial data securely and reliably from the cloud.
 
-My purpose for writing this software was to improve my understanding of JavaScript, DOM manipulation, UI design, state management, and browser APIs while meeting the requirements of the Web Apps module.
+### Database Structure:
+- **users**: Contains user accounts with hashed passwords for authentication.  
+- **transactions**: Stores income and expense entries linked to a user account.  
+- **budgets**: Manages spending limits categorized by type or time period.  
+- **savings**: Holds user-created savings goals with both current and target amounts.
 
-<!-- [Software Demo Video](YOUR VIDEO LINK HERE) -->
-Web Application Features
+The application fully supports CRUD operations:
+- **Create**: Add new users, transactions, budgets, or savings goals.  
+- **Read**: Retrieve all user-specific financial information.  
+- **Update**: Modify transactions, adjust budgets, or change savings progress.  
+- **Delete**: Remove records when they are no longer needed.
 
-This project uses pure HTML, CSS, and JavaScript to build a fully interactive web application that runs entirely in the browser. The app functions without any backend by leveraging the browser’s built-in storage capabilities.
+# Development Environment
 
-Feature Overview:
+- **Backend**: Node.js with Express.js for server logic and API endpoints.  
+- **Database**: MongoDB Atlas (cloud-hosted NoSQL database).  
+- **Frontend**: EJS templates with HTML, CSS, and JavaScript.  
+- **Authentication**: JWT (JSON Web Tokens) and bcrypt for secure password hashing.
 
-Calendar System: Interactive monthly calendar with clickable days.
+I developed and tested the application using VS Code, Node.js, and the MongoDB Atlas dashboard.
 
-Notes: Add, edit, delete, color-tag, and attach images to notes.
+# Useful Websites
 
-Daily Planner: Hour-by-hour scheduling for all 24 hours.
+- [MongoDB Atlas Documentation](https://www.mongodb.com/docs/atlas/)  
+- [Node.js Documentation](https://nodejs.org/en/docs/)  
+- [Express.js Guide](https://expressjs.com/)  
+- [JWT.io](https://jwt.io/)  
+- [bcrypt npm package](https://www.npmjs.com/package/bcrypt)
 
-Task Lists: Create tasks with checkboxes, urgent flags, and completion tracking.
+# Future Work
 
-Themes & Dark Mode: Choose between multiple themes and toggle dark mode.
-
-Timeline View: Browse all notes and plans in chronological order.
-
-Monthly Summary: View total notes, tasks completed, and important entries.
-
-Reminders: Browser notifications for time-sensitive notes.
-
-Drag & Drop: Move notes between days interactively.
-
-CRUD-like operations are supported through localStorage:
-
-Create: Notes, tasks, hourly plans
-
-Read: Load saved data from localStorage
-
-Update: Modify tasks, notes, plans, themes
-
-Delete: Remove notes, tasks, or entire day plans
-
-All data remains stored on the user’s device for privacy and security.
-
-Development Environment
-
-Frontend: HTML5, CSS3, JavaScript (ES6+)
-
-Storage: Browser localStorage for client-side persistence
-
-Tools: VS Code, Live Server, Chrome DevTools
-
-APIs Used:
-
-DOM API
-
-LocalStorage API
-
-Notification API
-
-Drag and Drop API
-
-Date & Time functions
-
-I developed and tested the entire application using a local web server (VS Code Live Server and Python http.server).
-
-Useful Websites
-
-https://developer.mozilla.org/
-
-https://www.w3schools.com/
-
-https://css-tricks.com/
-
-https://stackoverflow.com/
-
-https://javascript.info/
-
-Future Work
-
-Add cloud database support (Firebase, MongoDB Atlas, or SQL backend).
-
-Implement user authentication so multiple users can save their own planners.
-
-Add export/import abilities (JSON, CSV, PDF).
-
-Add mobile layout improvements and release as a PWA/mobile app.
-
-Add collaboration features for shared planning.
-
-Improve UI animations and transitions.
+- Integrate visual dashboards using charts and graphs for better insights.  
+- Upgrade the UI/UX using a modern frontend framework (React or Vue).  
+- Add reminders or notifications for budgets and upcoming bills.  
+- Support multiple currencies.  
+- Possibly add multi-user or household account roles.  
