@@ -1,54 +1,57 @@
 # Overview
 
-The Personal Finance Manager is a web application I developed to practice and strengthen my full-stack development skills while creating a tool that helps users manage their finances more easily. The application lets users create an account, log in securely, and track their income, expenses, budgets, and savings goals. All data is stored in a cloud-hosted database so users can access their records anytime.
+The **Daily Planner** is a web application I built to strengthen my skills in front-end development using pure **HTML, CSS, and JavaScript**. Its purpose is to help users organize their day with an integrated calendar, hourly plans, notes, tasks, and reminders—all stored directly in the browser using **localStorage**, ensuring privacy and offline usage.
 
-The program workflow is straightforward:  
-1. Create an account or log in with your existing credentials.  
-2. Add income and expense entries to track your financial activity.  
-3. Set budgets and savings goals.  
-4. View summaries such as total income, total expenses, remaining balance, and savings progress.
+The program is simple to use:  
+1. Open the monthly calendar and select any day.  
+2. Add daily notes, tasks, or hourly plans using interactive modals.  
+3. Set reminders, attach images, and organize tasks with urgency levels.  
+4. View everything chronologically through the timeline feature and track progress using the monthly summary.
 
-I built this software to improve my understanding of full-stack development using Node.js and Express, and to gain real experience working with MongoDB Atlas for cloud database storage and retrieval.
+My purpose for writing this software was to improve my understanding of DOM manipulation, UI/UX design, browser storage, and real-time interface updates—all without relying on external frameworks.
 
 <!-- [Software Demo Video](http://youtube.link.goes.here) -->
 
-# Cloud Database
+# Local Storage System
 
-This project uses **MongoDB Atlas** as its cloud database solution. Using Atlas’ free-tier cluster, the application stores and retrieves financial data securely and reliably from the cloud.
+This project uses the browser’s built-in **localStorage** API to save all user-created information. This ensures data persistence even after closing the browser, without requiring servers or external databases.
 
-### Database Structure:
-- **users**: Contains user accounts with hashed passwords for authentication.  
-- **transactions**: Stores income and expense entries linked to a user account.  
-- **budgets**: Manages spending limits categorized by type or time period.  
-- **savings**: Holds user-created savings goals with both current and target amounts.
+### Data Structure:
+- **Notes**: Stored by date using keys like `planner-YYYY-MM-DD`.  
+- **Daily Plans**: Hour-by-hour plans stored with keys like `plan-YYYY-MM-DD`.  
+- **Preferences**: Theme, dark mode, and view preferences stored with simple keys such as `darkMode` and `theme`.
 
-The application fully supports CRUD operations:
-- **Create**: Add new users, transactions, budgets, or savings goals.  
-- **Read**: Retrieve all user-specific financial information.  
-- **Update**: Modify transactions, adjust budgets, or change savings progress.  
-- **Delete**: Remove records when they are no longer needed.
+CRUD operations are fully supported:
+- **Create**: Add notes, plans, images, tasks, reminders.  
+- **Read**: Retrieve and display notes or hourly plans for any date.  
+- **Update**: Edit notes, rearrange items, change tasks, or modify reminders.  
+- **Delete**: Remove notes, clear daily plans, or delete specific tasks.
 
 # Development Environment
 
-- **Backend**: Node.js with Express.js for server logic and API endpoints.  
-- **Database**: MongoDB Atlas (cloud-hosted NoSQL database).  
-- **Frontend**: EJS templates with HTML, CSS, and JavaScript.  
-- **Authentication**: JWT (JSON Web Tokens) and bcrypt for secure password hashing.
+- **HTML5** – Base structure for calendar, modals, and layout  
+- **CSS3** – Custom styling (over 1,200+ lines), multiple themes, animations, responsive design  
+- **JavaScript (ES6+)** – Core logic, DOM manipulation, event handling (over 1,600+ lines)  
+- **LocalStorage API** – Persistent storage of all notes, tasks, and settings  
+- **Browser Notifications API** – Real-time reminders for important tasks  
 
-I developed and tested the application using VS Code, Node.js, and the MongoDB Atlas dashboard.
+I developed and tested the application using **VS Code**, the **Live Server extension**, and multiple modern browsers (Chrome, Firefox, Edge).
 
 # Useful Websites
 
-- [MongoDB Atlas Documentation](https://www.mongodb.com/docs/atlas/)  
-- [Node.js Documentation](https://nodejs.org/en/docs/)  
-- [Express.js Guide](https://expressjs.com/)  
-- [JWT.io](https://jwt.io/)  
-- [bcrypt npm package](https://www.npmjs.com/package/bcrypt)
+- https://developer.mozilla.org/  
+- https://www.w3schools.com/js/  
+- https://css-tricks.com/  
+- https://javascript.info/  
+- https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage  
 
 # Future Work
 
-- Integrate visual dashboards using charts and graphs for better insights.  
-- Upgrade the UI/UX using a modern frontend framework (React or Vue).  
-- Add reminders or notifications for budgets and upcoming bills.  
-- Support multiple currencies.  
-- Possibly add multi-user or household account roles.  
+- Integrate IndexedDB for more advanced storage  
+- Add user authentication and cloud sync  
+- Create export/import functionality (JSON or CSV)  
+- Add print-friendly daily/weekly reports  
+- Build a mobile app version  
+- Add collaborative planning features  
+- Improve accessibility and screen reader support  
+
