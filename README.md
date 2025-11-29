@@ -54,3 +54,7 @@ I developed and tested the application using **VS Code**, the **Live Server exte
 - Build a mobile app version  
 - Add collaborative planning features  
 - Improve accessibility and screen reader support  
+<<<<<<< HEAD
+=======
+
+>>>>>>> 1c40a01c7aa3094b3a04df859f38eaeb0ca9fae7
