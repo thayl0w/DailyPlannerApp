@@ -7,6 +7,7 @@ let currentYear = currentDate.getFullYear();
 let currentView = 'calendar'; // 'calendar' or 'timeline'
 let searchQuery = '';
 let checklistItemId = 0;
+let plannerViewDate = new Date(); // Date for planner view
 
 // Month names array for display
 const monthNames = [
@@ -23,15 +24,51 @@ const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
  */
 async function init() {
     loadPreferences();
-    await generateCalendar();
-    setupEventListeners();
-    updateMonthlySummary();
-    checkReminders();
-    setInterval(checkReminders, 60000); // Check reminders every minute
-    await updateHourlySidebar(); // Update sidebar on load
-    setInterval(async () => await updateHourlySidebar(), 3600000); // Update sidebar every hour
-    // Also update every minute to catch hour changes
-    setInterval(async () => await updateHourlySidebar(), 60000);
+    
+    // Ensure calendar view is visible on load
+    const calendarView = document.getElementById('calendarView');
+    const timelineView = document.getElementById('timelineView');
+    const notesListView = document.getElementById('notesListView');
+    const plannerSidebar = document.getElementById('plannerSidebar');
+    
+    if (calendarView) {
+        calendarView.style.display = 'block';
+    }
+    if (timelineView) {
+        timelineView.style.display = 'none';
+    }
+    if (notesListView) {
+        notesListView.style.display = 'none';
+    }
+    if (plannerSidebar) {
+        plannerSidebar.style.display = 'none';
+    }
+    
+    try {
+        await generateCalendar();
+        setupEventListeners();
+        updateMonthlySummary();
+        checkReminders();
+        setInterval(checkReminders, 60000); // Check reminders every minute
+        // Initialize time display
+        updateTimeDisplay();
+        // Update sidebar content on load
+        await updateHourlySidebarContent();
+        // Update only time display every 100ms to show milliseconds updating
+        setInterval(updateTimeDisplay, 100);
+        // Update sidebar content only when hour changes (every minute check)
+        setInterval(async () => {
+            const now = new Date();
+            const currentMinute = now.getMinutes();
+            // Only update if minute changed (to avoid constant updates)
+            if (window.lastMinute !== currentMinute) {
+                window.lastMinute = currentMinute;
+                await updateHourlySidebarContent();
+            }
+        }, 1000);
+    } catch (error) {
+        console.error('Error initializing calendar:', error);
+    }
 }
 
 /**
@@ -213,14 +250,36 @@ function setupEventListeners() {
         closeNotesListBtn.addEventListener('click', toggleNotesList);
     }
     
+    // Planner view button
+    const plannerViewBtn = document.getElementById('plannerViewBtn');
+    if (plannerViewBtn) {
+        plannerViewBtn.addEventListener('click', togglePlannerView);
+    }
+    
+    // Close planner sidebar button
+    const closePlannerSidebarBtn = document.getElementById('closePlannerSidebar');
+    if (closePlannerSidebarBtn) {
+        closePlannerSidebarBtn.addEventListener('click', togglePlannerView);
+    }
+    
+    // Planner navigation buttons
+    const plannerPrevDay = document.getElementById('plannerPrevDay');
+    const plannerNextDay = document.getElementById('plannerNextDay');
+    if (plannerPrevDay) {
+        plannerPrevDay.addEventListener('click', () => changePlannerDay(-1));
+    }
+    if (plannerNextDay) {
+        plannerNextDay.addEventListener('click', () => changePlannerDay(1));
+    }
+    
     // Search bar
     const searchBar = document.getElementById('searchBar');
     if (searchBar) {
-        searchBar.addEventListener('input', (e) => {
+        searchBar.addEventListener('input', async (e) => {
             searchQuery = e.target.value.toLowerCase();
-            generateCalendar();
+            await generateCalendar();
             if (currentView === 'timeline') {
-                generateTimeline();
+                await generateTimeline();
             }
         });
     }
@@ -228,13 +287,13 @@ function setupEventListeners() {
     // Clear search button
     const clearSearchBtn = document.getElementById('clearSearch');
     if (clearSearchBtn) {
-        clearSearchBtn.addEventListener('click', () => {
+        clearSearchBtn.addEventListener('click', async () => {
             if (searchBar) {
                 searchBar.value = '';
                 searchQuery = '';
-                generateCalendar();
+                await generateCalendar();
                 if (currentView === 'timeline') {
-                    generateTimeline();
+                    await generateTimeline();
                 }
             }
         });
@@ -274,7 +333,14 @@ async function generateCalendar() {
     const monthHeader = document.getElementById('monthYear');
     
     if (!calendarGrid || !monthHeader) {
+        console.error('Calendar elements not found:', { calendarGrid, monthHeader });
         return;
+    }
+    
+    // Ensure calendar view is visible
+    const calendarView = document.getElementById('calendarView');
+    if (calendarView) {
+        calendarView.style.display = 'block';
     }
     
     // Update month/year header
@@ -681,8 +747,8 @@ async function saveNote() {
         await generateNotesList();
     }
     
-    // Update sidebar to show notes for current hour
-    await updateHourlySidebar();
+    // Update sidebar content to show notes for current hour
+    await updateHourlySidebarContent();
     
     // Close the modal
     closeModal();
@@ -892,13 +958,13 @@ function changeTheme(theme) {
 /**
  * Toggle between calendar and timeline view
  */
-function toggleView() {
+async function toggleView() {
     const calendarView = document.getElementById('calendarView');
     const timelineView = document.getElementById('timelineView');
     const notesListView = document.getElementById('notesListView');
     const viewToggle = document.getElementById('viewToggle');
     
-    // Hide notes list if open
+    // Hide other views
     if (notesListView) {
         notesListView.style.display = 'none';
     }
@@ -914,7 +980,7 @@ function toggleView() {
         if (viewToggle) {
             viewToggle.textContent = '📅 Calendar View';
         }
-        generateTimeline();
+        await generateTimeline();
     } else {
         currentView = 'calendar';
         if (calendarView) {
@@ -926,7 +992,7 @@ function toggleView() {
         if (viewToggle) {
             viewToggle.textContent = '📅 Timeline View';
         }
-        generateCalendar();
+        await generateCalendar();
     }
 }
 
@@ -963,6 +1029,152 @@ async function toggleNotesList() {
             await generateNotesList();
         }
     }
+}
+
+/**
+ * Toggle planner view
+ * Shows a detailed day planner with hourly slots
+ */
+async function togglePlannerView() {
+    const plannerSidebar = document.getElementById('plannerSidebar');
+    
+    if (plannerSidebar) {
+        const isVisible = plannerSidebar.style.display === 'block' || plannerSidebar.style.display === '';
+        if (isVisible) {
+            // Hide planner sidebar
+            plannerSidebar.style.display = 'none';
+        } else {
+            // Show planner sidebar
+            plannerSidebar.style.display = 'block';
+            plannerViewDate = new Date(); // Reset to today
+            await generatePlannerView();
+        }
+    }
+}
+
+/**
+ * Change the day in planner view
+ * @param {number} direction - 1 for next day, -1 for previous day
+ */
+async function changePlannerDay(direction) {
+    plannerViewDate.setDate(plannerViewDate.getDate() + direction);
+    await generatePlannerView();
+}
+
+/**
+ * Generate planner view showing detailed day plan with hourly slots
+ */
+async function generatePlannerView() {
+    const plannerViewContent = document.getElementById('plannerViewContent');
+    const plannerCurrentDate = document.getElementById('plannerCurrentDate');
+    
+    if (!plannerViewContent || !plannerCurrentDate) {
+        return;
+    }
+    
+    // Update date display
+    const dateDisplay = formatDateDisplay(
+        plannerViewDate.getFullYear(),
+        plannerViewDate.getMonth(),
+        plannerViewDate.getDate()
+    );
+    plannerCurrentDate.textContent = dateDisplay;
+    
+    // Get date key
+    const dateKey = formatDateKey(
+        plannerViewDate.getFullYear(),
+        plannerViewDate.getMonth(),
+        plannerViewDate.getDate()
+    );
+    
+    // Load plan data
+    const planData = await loadDailyPlan(dateKey);
+    const noteData = await loadNote(dateKey);
+    
+    // Generate hourly slots
+    const hours = [
+        '12 AM', '1 AM', '2 AM', '3 AM', '4 AM', '5 AM',
+        '6 AM', '7 AM', '8 AM', '9 AM', '10 AM', '11 AM',
+        '12 PM', '1 PM', '2 PM', '3 PM', '4 PM', '5 PM',
+        '6 PM', '7 PM', '8 PM', '9 PM', '10 PM', '11 PM'
+    ];
+    
+    const year = plannerViewDate.getFullYear();
+    const month = plannerViewDate.getMonth();
+    const day = plannerViewDate.getDate();
+    
+    let plannerHTML = '<div class="planner-hourly-grid">';
+    
+    for (let hour = 0; hour < 24; hour++) {
+        const hourLabel = hours[hour];
+        const hourPlan = planData && planData.hourlyPlans && planData.hourlyPlans[hour] 
+            ? planData.hourlyPlans[hour] 
+            : '';
+        
+        // Check if there's a note for this hour
+        const hourNote = noteData && noteData.time !== null && noteData.time !== undefined 
+            && parseInt(noteData.time) === hour 
+            ? noteData.text 
+            : '';
+        
+        plannerHTML += `<div class="planner-hour-slot" data-hour="${hour}">
+            <div class="planner-hour-header">
+                <span class="planner-hour-time">${hourLabel}</span>
+                <button class="planner-edit-btn" data-year="${year}" data-month="${month}" data-day="${day}">Edit</button>
+            </div>
+            <div class="planner-hour-content">`;
+        
+        if (hourPlan) {
+            plannerHTML += `<div class="planner-plan-item">📅 ${hourPlan}</div>`;
+        }
+        if (hourNote) {
+            const emoji = noteData.emoji && noteData.emoji !== 'none' ? noteData.emoji : '📝';
+            plannerHTML += `<div class="planner-note-item">${emoji} ${hourNote}</div>`;
+        }
+        if (!hourPlan && !hourNote) {
+            plannerHTML += `<div class="planner-empty">No plans or notes</div>`;
+        }
+        
+        plannerHTML += `</div></div>`;
+    }
+    
+    // Add tasks section
+    if (planData && planData.tasks && planData.tasks.length > 0) {
+        plannerHTML += `<div class="planner-tasks-section">
+            <h3>Daily Tasks</h3>`;
+        
+        planData.tasks.forEach(task => {
+            const completedClass = task.completed ? 'completed' : '';
+            const urgentClass = task.urgent ? 'urgent' : '';
+            plannerHTML += `<div class="planner-task-item ${completedClass} ${urgentClass}">
+                <input type="checkbox" ${task.completed ? 'checked' : ''} disabled>
+                <span>${task.urgent ? '🚨 ' : ''}${task.text}</span>
+            </div>`;
+        });
+        
+        plannerHTML += `</div>`;
+    }
+    
+    // Add notes section
+    if (planData && planData.notes && planData.notes.trim()) {
+        plannerHTML += `<div class="planner-notes-section">
+            <h3>Daily Notes</h3>
+            <div class="planner-notes-content">${planData.notes}</div>
+        </div>`;
+    }
+    
+    plannerHTML += '</div>';
+    plannerViewContent.innerHTML = plannerHTML;
+    
+    // Add event listeners for edit buttons
+    plannerViewContent.querySelectorAll('.planner-edit-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const year = parseInt(btn.dataset.year);
+            const month = parseInt(btn.dataset.month);
+            const day = parseInt(btn.dataset.day);
+            openDailyPlanModal(year, month, day);
+        });
+    });
 }
 
 /**
@@ -1203,7 +1415,7 @@ async function generateNotesList() {
                 
                 // Update calendar and sidebar
                 await generateCalendar();
-                await updateHourlySidebar();
+                await updateHourlySidebarContent();
                 await updateMonthlySummary();
             }
         }
@@ -1213,7 +1425,7 @@ async function generateNotesList() {
 /**
  * Generate timeline view showing all notes sorted by date
  */
-function generateTimeline() {
+async function generateTimeline() {
     const timelineContent = document.getElementById('timelineContent');
     if (!timelineContent) {
         return;
@@ -1221,13 +1433,63 @@ function generateTimeline() {
     
     timelineContent.innerHTML = '';
     
-    // Get all notes from localStorage
+    // Get all notes from localStorage and API
     const allNotes = [];
+    
+    // Try to get all notes from API first
+    try {
+        const response = await fetch('/api/notes');
+        if (response.ok) {
+            const result = await response.json();
+            if (result.success && result.data) {
+                Object.keys(result.data).forEach(dateKey => {
+                    const noteData = result.data[dateKey];
+                    if (noteData && (
+                        noteData.text || 
+                        (noteData.color && noteData.color !== 'none') || 
+                        (noteData.emoji && noteData.emoji !== 'none') || 
+                        (noteData.checklist && noteData.checklist.length > 0) || 
+                        noteData.image || 
+                        noteData.reminder || 
+                        noteData.time !== null
+                    )) {
+                        const dateStr = dateKey.replace('planner-', '');
+                        const [year, month, day] = dateStr.split('-').map(Number);
+                        allNotes.push({
+                            dateKey: dateKey,
+                            date: new Date(year, month - 1, day),
+                            year,
+                            month: month - 1,
+                            day,
+                            data: noteData
+                        });
+                    }
+                });
+            }
+        }
+    } catch (error) {
+        console.log('API failed, using localStorage fallback for timeline');
+    }
+    
+    // Also check localStorage for notes not yet synced
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (key && key.startsWith('planner-')) {
-            const noteData = loadNote(key);
-            if (noteData) {
+        if (key && key.startsWith('planner-') && !key.startsWith('plan-') && !key.includes('reminder-shown')) {
+            // Skip if already added from API
+            if (allNotes.find(n => n.dateKey === key)) {
+                continue;
+            }
+            
+            const noteData = await loadNote(key);
+            if (noteData && (
+                noteData.text || 
+                (noteData.color && noteData.color !== 'none') || 
+                (noteData.emoji && noteData.emoji !== 'none') || 
+                (noteData.checklist && noteData.checklist.length > 0) || 
+                noteData.image || 
+                noteData.reminder || 
+                noteData.time !== null
+            )) {
                 const dateStr = key.replace('planner-', '');
                 const [year, month, day] = dateStr.split('-').map(Number);
                 allNotes.push({
@@ -1308,8 +1570,6 @@ function generateTimeline() {
 async function updateMonthlySummary() {
     let totalNotes = 0;
     let importantNotes = 0;
-    let tasksCompleted = 0;
-    let totalTasks = 0;
     
     const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
     
@@ -1332,41 +1592,17 @@ async function updateMonthlySummary() {
             if (noteData.color === 'red') {
                 importantNotes++;
             }
-            
-            if (noteData.checklist && noteData.checklist.length > 0) {
-                noteData.checklist.forEach(item => {
-                    totalTasks++;
-                    if (item.completed) {
-                        tasksCompleted++;
-                    }
-                });
-            }
-        }
-        
-        // Also check daily plans for tasks
-        const planData = await loadDailyPlan(dateKey);
-        if (planData && planData.tasks && planData.tasks.length > 0) {
-            planData.tasks.forEach(item => {
-                totalTasks++;
-                if (item.completed) {
-                    tasksCompleted++;
-                }
-            });
         }
     }
     
     const totalNotesEl = document.getElementById('totalNotes');
     const importantNotesEl = document.getElementById('importantNotes');
-    const tasksCompletedEl = document.getElementById('tasksCompleted');
     
     if (totalNotesEl) {
         totalNotesEl.textContent = totalNotes;
     }
     if (importantNotesEl) {
         importantNotesEl.textContent = importantNotes;
-    }
-    if (tasksCompletedEl) {
-        tasksCompletedEl.textContent = `${tasksCompleted} / ${totalTasks}`;
     }
 }
 
@@ -1641,6 +1877,13 @@ async function saveCurrentPlanMode() {
         // This will be handled by savePlanToAPI when hasContent is false
         await savePlanToAPI(dateKey, existingPlan);
     }
+    
+    // Update sidebar content if this is today's plan
+    const now = new Date();
+    const todayKey = formatDateKey(now.getFullYear(), now.getMonth(), now.getDate());
+    if (dateKey === todayKey) {
+        await updateHourlySidebarContent();
+    }
 }
 
 /**
@@ -1714,7 +1957,7 @@ async function switchPlanMode(mode) {
         // Load existing tasks
         if (existingPlan && existingPlan.tasks && existingPlan.tasks.length > 0) {
             existingPlan.tasks.forEach(task => {
-                addTaskItem(task.text, task.completed, task.id);
+                addTaskItem(task.text, task.completed, task.id, task.urgent || false);
             });
         }
     }
@@ -1853,8 +2096,25 @@ async function saveDailyPlan() {
     // Regenerate calendar to show updated plan indicator
     await generateCalendar();
     
-    // Update sidebar
-    await updateHourlySidebar();
+    // Update sidebar if this is today's plan
+    const now = new Date();
+    const todayKey = formatDateKey(now.getFullYear(), now.getMonth(), now.getDate());
+    if (dateKey === todayKey) {
+        await updateHourlySidebar();
+    }
+    
+    // Update planner sidebar if it's open and showing this date
+    const plannerSidebar = document.getElementById('plannerSidebar');
+    if (plannerSidebar && plannerSidebar.style.display === 'block') {
+        const plannerViewDateKey = formatDateKey(
+            plannerViewDate.getFullYear(),
+            plannerViewDate.getMonth(),
+            plannerViewDate.getDate()
+        );
+        if (dateKey === plannerViewDateKey) {
+            await generatePlannerView();
+        }
+    }
     
     // Close the modal
     closeDailyPlanModal();
@@ -1885,16 +2145,44 @@ function closeDailyPlanModal() {
 }
 
 /**
- * Update the hourly sidebar with current hour's tasks and notes
- * Updates every hour automatically
+ * Update only the time display (for milliseconds)
  */
-async function updateHourlySidebar() {
+function updateTimeDisplay() {
     const currentHourDisplay = document.getElementById('currentHourDisplay');
-    const currentHourNotes = document.getElementById('currentHourNotes');
+    const currentDateDisplay = document.getElementById('currentDateDisplay');
+    
+    if (!currentHourDisplay || !currentDateDisplay) {
+        return;
+    }
+    
+    const now = new Date();
+    const currentHour = now.getHours();
+    
+    // Format current date display (only update if date changed)
+    const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    const dateLabel = now.toLocaleDateString('en-US', dateOptions);
+    if (currentDateDisplay.textContent !== dateLabel) {
+        currentDateDisplay.textContent = dateLabel;
+    }
+    
+    // Format current time with milliseconds
+    const hour12 = currentHour === 0 ? 12 : (currentHour > 12 ? currentHour - 12 : currentHour);
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    const milliseconds = String(now.getMilliseconds()).padStart(3, '0');
+    const ampm = currentHour >= 12 ? 'PM' : 'AM';
+    const timeLabel = `${hour12}:${minutes}:${seconds}.${milliseconds} ${ampm}`;
+    currentHourDisplay.textContent = timeLabel;
+}
+
+/**
+ * Update the hourly sidebar content (tasks and notes) without recreating checkboxes unnecessarily
+ */
+async function updateHourlySidebarContent() {
     const currentHourTasks = document.getElementById('currentHourTasks');
     const urgentTasks = document.getElementById('urgentTasks');
     
-    if (!currentHourDisplay || !currentHourNotes || !currentHourTasks || !urgentTasks) {
+    if (!currentHourTasks || !urgentTasks) {
         return;
     }
     
@@ -1905,58 +2193,9 @@ async function updateHourlySidebar() {
     const currentMonthIndex = now.getMonth();
     const currentYearValue = now.getFullYear();
     
-    // Format current hour display
-    const hour12 = currentHour === 0 ? 12 : (currentHour > 12 ? currentHour - 12 : currentHour);
-    const ampm = currentHour >= 12 ? 'PM' : 'AM';
-    const hourLabel = `${hour12}:00 ${ampm}`;
-    currentHourDisplay.textContent = hourLabel;
-    
     // Get date key for today
     const dateKey = formatDateKey(currentYearValue, currentMonthIndex, currentDate);
     const planData = await loadDailyPlan(dateKey);
-    
-    // Get hour index (0-23 for 12 AM to 11 PM)
-    const hourIndex = currentHour;
-    
-    // Display notes for current hour
-    // First check hourly plans from daily plan
-    let hourNotes = [];
-    if (planData && planData.hourlyPlans && planData.hourlyPlans[hourIndex]) {
-        hourNotes.push({
-            text: planData.hourlyPlans[hourIndex],
-            source: 'plan'
-        });
-    }
-    
-    // Also check notes with time selection
-    const noteData = await loadNote(dateKey);
-    if (noteData && noteData.time !== null && noteData.time !== undefined && parseInt(noteData.time) === hourIndex) {
-        if (noteData.text) {
-            hourNotes.push({
-                text: noteData.text,
-                source: 'note',
-                emoji: noteData.emoji,
-                color: noteData.color
-            });
-        }
-    }
-    
-    // Display all notes for this hour
-    if (hourNotes.length > 0) {
-        let notesHTML = '';
-        hourNotes.forEach(note => {
-            let noteContent = '';
-            if (note.emoji && note.emoji !== 'none') {
-                noteContent += `<span style="font-size: 18px; margin-right: 5px;">${note.emoji}</span>`;
-            }
-            noteContent += note.text;
-            const borderColor = note.color === 'red' ? '#e74c3c' : note.color === 'blue' ? '#4a90e2' : note.color === 'green' ? '#2ecc71' : '#4a90e2';
-            notesHTML += `<p class="hour-content" style="border-left-color: ${borderColor};">${noteContent}</p>`;
-        });
-        currentHourNotes.innerHTML = notesHTML;
-    } else {
-        currentHourNotes.innerHTML = '<p class="no-content">No notes for this hour</p>';
-    }
     
     // Display tasks for current hour (all tasks from today's plan)
     const allTasks = planData && planData.tasks ? planData.tasks : [];
@@ -1972,70 +2211,134 @@ async function updateHourlySidebar() {
         }
     });
     
-    // Display regular tasks
-    if (regularTasksList.length > 0) {
+    // Display regular tasks - only update if tasks changed
+    const existingRegularTasks = currentHourTasks.querySelectorAll('.sidebar-task-item');
+    const existingTaskIds = Array.from(existingRegularTasks).map(item => item.dataset.taskId);
+    const currentTaskIds = regularTasksList.map(task => task.id);
+    
+    // Only recreate if tasks changed
+    if (JSON.stringify(existingTaskIds.sort()) !== JSON.stringify(currentTaskIds.sort()) || 
+        regularTasksList.some(task => {
+            const existingItem = currentHourTasks.querySelector(`[data-task-id="${task.id}"]`);
+            if (!existingItem) return true;
+            const existingCheckbox = existingItem.querySelector('input[type="checkbox"]');
+            return existingCheckbox && existingCheckbox.checked !== task.completed;
+        })) {
         currentHourTasks.innerHTML = '';
-        regularTasksList.forEach(task => {
-            const taskItem = document.createElement('div');
-            taskItem.className = 'sidebar-task-item';
-            taskItem.dataset.taskId = task.id;
-            
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.checked = task.completed || false;
-            checkbox.addEventListener('change', () => {
-                toggleTaskCompletion(dateKey, task.id, checkbox.checked);
+        if (regularTasksList.length > 0) {
+            regularTasksList.forEach(task => {
+                const taskItem = document.createElement('div');
+                taskItem.className = 'sidebar-task-item';
+                taskItem.dataset.taskId = task.id;
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.checked = task.completed || false;
+                checkbox.style.cursor = 'pointer';
+                checkbox.addEventListener('change', async (e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    await toggleTaskCompletion(dateKey, task.id, checkbox.checked);
+                });
+                
+                const taskText = document.createElement('span');
+                taskText.textContent = task.text;
+                if (checkbox.checked) {
+                    taskText.style.textDecoration = 'line-through';
+                    taskText.style.color = '#999';
+                }
+                
+                taskItem.appendChild(checkbox);
+                taskItem.appendChild(taskText);
+                currentHourTasks.appendChild(taskItem);
             });
-            
-            const taskText = document.createElement('span');
-            taskText.textContent = task.text;
-            if (checkbox.checked) {
-                taskText.style.textDecoration = 'line-through';
-                taskText.style.color = '#999';
-            }
-            
-            taskItem.appendChild(checkbox);
-            taskItem.appendChild(taskText);
-            currentHourTasks.appendChild(taskItem);
-        });
+        } else {
+            currentHourTasks.innerHTML = '<p class="no-content">No tasks for this hour</p>';
+        }
     } else {
-        currentHourTasks.innerHTML = '<p class="no-content">No tasks for this hour</p>';
+        // Just update checkbox states without recreating
+        regularTasksList.forEach(task => {
+            const existingItem = currentHourTasks.querySelector(`[data-task-id="${task.id}"]`);
+            if (existingItem) {
+                const checkbox = existingItem.querySelector('input[type="checkbox"]');
+                const taskText = existingItem.querySelector('span');
+                if (checkbox && checkbox.checked !== task.completed) {
+                    checkbox.checked = task.completed;
+                    if (taskText) {
+                        taskText.style.textDecoration = task.completed ? 'line-through' : 'none';
+                        taskText.style.color = task.completed ? '#999' : '#333';
+                    }
+                }
+            }
+        });
     }
     
-    // Display urgent tasks
-    if (urgentTasksList.length > 0) {
+    // Display urgent tasks - only update if tasks changed
+    const existingUrgentTasks = urgentTasks.querySelectorAll('.sidebar-task-item');
+    const existingUrgentTaskIds = Array.from(existingUrgentTasks).map(item => item.dataset.taskId);
+    const currentUrgentTaskIds = urgentTasksList.map(task => task.id);
+    
+    // Only recreate if tasks changed
+    if (JSON.stringify(existingUrgentTaskIds.sort()) !== JSON.stringify(currentUrgentTaskIds.sort()) ||
+        urgentTasksList.some(task => {
+            const existingItem = urgentTasks.querySelector(`[data-task-id="${task.id}"]`);
+            if (!existingItem) return true;
+            const existingCheckbox = existingItem.querySelector('input[type="checkbox"]');
+            return existingCheckbox && existingCheckbox.checked !== task.completed;
+        })) {
         urgentTasks.innerHTML = '';
-        urgentTasksList.forEach(task => {
-            const taskItem = document.createElement('div');
-            taskItem.className = 'sidebar-task-item urgent';
-            taskItem.dataset.taskId = task.id;
-            
-            const urgentIcon = document.createElement('span');
-            urgentIcon.className = 'urgent-icon';
-            urgentIcon.textContent = '🚨';
-            
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.checked = task.completed || false;
-            checkbox.addEventListener('change', () => {
-                toggleTaskCompletion(dateKey, task.id, checkbox.checked);
+        if (urgentTasksList.length > 0) {
+            urgentTasksList.forEach(task => {
+                const taskItem = document.createElement('div');
+                taskItem.className = 'sidebar-task-item urgent';
+                taskItem.dataset.taskId = task.id;
+                
+                const urgentIcon = document.createElement('span');
+                urgentIcon.className = 'urgent-icon';
+                urgentIcon.textContent = '🚨';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.checked = task.completed || false;
+                checkbox.style.cursor = 'pointer';
+                checkbox.addEventListener('change', async (e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    await toggleTaskCompletion(dateKey, task.id, checkbox.checked);
+                });
+                
+                const taskText = document.createElement('span');
+                taskText.className = 'urgent-text';
+                taskText.textContent = task.text;
+                if (checkbox.checked) {
+                    taskText.style.textDecoration = 'line-through';
+                    taskText.style.opacity = '0.7';
+                }
+                
+                taskItem.appendChild(urgentIcon);
+                taskItem.appendChild(checkbox);
+                taskItem.appendChild(taskText);
+                urgentTasks.appendChild(taskItem);
             });
-            
-            const taskText = document.createElement('span');
-            taskText.className = 'urgent-text';
-            taskText.textContent = task.text;
-            if (checkbox.checked) {
-                taskText.style.textDecoration = 'line-through';
-                taskText.style.opacity = '0.7';
-            }
-            
-            taskItem.appendChild(urgentIcon);
-            taskItem.appendChild(checkbox);
-            taskItem.appendChild(taskText);
-            urgentTasks.appendChild(taskItem);
-        });
+        } else {
+            urgentTasks.innerHTML = '<p class="no-content">No urgent tasks</p>';
+        }
     } else {
-        urgentTasks.innerHTML = '<p class="no-content">No urgent tasks</p>';
+        // Just update checkbox states without recreating
+        urgentTasksList.forEach(task => {
+            const existingItem = urgentTasks.querySelector(`[data-task-id="${task.id}"]`);
+            if (existingItem) {
+                const checkbox = existingItem.querySelector('input[type="checkbox"]');
+                const taskText = existingItem.querySelector('.urgent-text');
+                if (checkbox && checkbox.checked !== task.completed) {
+                    checkbox.checked = task.completed;
+                    if (taskText) {
+                        taskText.style.textDecoration = task.completed ? 'line-through' : 'none';
+                        taskText.style.opacity = task.completed ? '0.7' : '1';
+                    }
+                }
+            }
+        });
     }
 }
 
@@ -2059,8 +2362,8 @@ async function toggleTaskCompletion(dateKey, taskId, completed) {
         // Save updated plan to database API (with localStorage fallback)
         await savePlanToAPI(dateKey, planData);
         
-        // Update sidebar to reflect changes
-        await updateHourlySidebar();
+        // Update sidebar content to reflect changes (preserves checkboxes)
+        await updateHourlySidebarContent();
         
         // Update monthly summary
         updateMonthlySummary();

@@ -68,7 +68,7 @@ nav a:hover {
 .main-content-wrapper {
     display: flex;
     gap: 20px;
-    max-width: 1400px;
+    max-width: 1800px;
     margin: 30px auto;
     padding: 20px;
     min-height: calc(100vh - 200px);
@@ -102,10 +102,19 @@ nav a:hover {
     font-size: 18px;
 }
 
+.current-date-display {
+    font-size: 14px;
+    font-weight: normal;
+    color: #666;
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
 .current-hour-display {
-    font-size: 24px;
+    font-size: 20px;
     font-weight: bold;
     color: #4a90e2;
+    font-family: 'Courier New', monospace;
 }
 
 .sidebar-content {
@@ -186,7 +195,8 @@ nav a:hover {
 .sidebar-task-item input[type="checkbox"] {
     width: 16px;
     height: 16px;
-    cursor: default;
+    cursor: pointer;
+    flex-shrink: 0;
 }
 
 .sidebar-task-item span {
@@ -212,6 +222,46 @@ nav a:hover {
 .urgent-section h4 {
     color: #e74c3c;
     border-bottom-color: #e74c3c;
+}
+
+.planned-day-section {
+    background-color: #f0f8ff;
+    border: 2px solid #4a90e2;
+}
+
+.planned-day-section h4 {
+    color: #4a90e2;
+    border-bottom-color: #4a90e2;
+}
+
+.planned-day-content {
+    min-height: 50px;
+    max-height: 300px;
+    overflow-y: auto;
+    word-wrap: break-word;
+    overflow-x: hidden;
+}
+
+.planned-hour-item {
+    padding: 8px;
+    margin-bottom: 8px;
+    background-color: white;
+    border-radius: 4px;
+    border-left: 3px solid #4a90e2;
+}
+
+.planned-hour-label {
+    font-weight: bold;
+    color: #4a90e2;
+    font-size: 12px;
+    margin-bottom: 4px;
+}
+
+.planned-hour-text {
+    color: #333;
+    font-size: 13px;
+    line-height: 1.4;
+    word-wrap: break-word;
 }
 
 /* Calendar Container */
@@ -266,6 +316,8 @@ nav a:hover {
     border: 1px solid #e0e0e0;
     border-radius: 4px;
     overflow: hidden;
+    min-height: 400px;
+    visibility: visible !important;
 }
 
 .day-header {
@@ -1037,6 +1089,11 @@ body.dark-mode .note-list-text {
 /* View Container */
 .view-container {
     margin-bottom: 20px;
+    display: block;
+}
+
+#calendarView {
+    display: block !important;
 }
 
 /* Dark Mode */
@@ -1444,6 +1501,14 @@ body.dark-mode .hourly-sidebar {
     border-color: #444;
 }
 
+body.dark-mode .current-date-display {
+    color: #aaa;
+}
+
+body.dark-mode .current-hour-display {
+    color: #5a9fe2;
+}
+
 body.dark-mode .sidebar-section {
     background-color: #333;
     border-color: #444;
@@ -1466,6 +1531,309 @@ body.dark-mode .sidebar-task-item.urgent {
 body.dark-mode .urgent-section {
     background-color: #3a1a1a;
     border-color: #e74c3c;
+}
+
+/* Planner Sidebar (Right Side) */
+.planner-sidebar {
+    width: 350px;
+    min-width: 300px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    border: 1px solid #e0e0e0;
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+    position: sticky;
+    top: 20px;
+    align-self: flex-start;
+}
+
+.planner-sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #4a90e2;
+}
+
+.planner-sidebar-header h3 {
+    color: #2c3e50;
+    margin: 0;
+    font-size: 18px;
+}
+
+.btn-close-sidebar {
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s;
+    padding: 0;
+}
+
+.btn-close-sidebar:hover {
+    background-color: #c0392b;
+}
+
+.planner-date-selector {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding: 10px;
+    background-color: white;
+    border-radius: 4px;
+    border: 1px solid #e0e0e0;
+}
+
+.planner-current-date {
+    font-weight: bold;
+    color: #4a90e2;
+    font-size: 14px;
+    flex: 1;
+    text-align: center;
+}
+
+body.dark-mode .planner-sidebar {
+    background-color: #2c2c2c;
+    border-color: #444;
+}
+
+body.dark-mode .planner-sidebar-header {
+    border-bottom-color: #4a90e2;
+}
+
+body.dark-mode .planner-date-selector {
+    background-color: #333;
+    border-color: #444;
+}
+
+body.dark-mode .planned-day-section {
+    background-color: #1a1a2e;
+    border-color: #4a90e2;
+}
+
+body.dark-mode .planned-hour-item {
+    background-color: #2c2c2c;
+    color: #e0e0e0;
+}
+
+body.dark-mode .planned-hour-text {
+    color: #e0e0e0;
+}
+
+/* Planner View Styles */
+.planner-view-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.planner-view-header h2 {
+    color: #2c3e50;
+    margin: 0;
+}
+
+.planner-date-selector {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.planner-current-date {
+    font-weight: bold;
+    color: #4a90e2;
+    font-size: 16px;
+}
+
+.btn-nav-day {
+    background-color: #4a90e2;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s;
+}
+
+.btn-nav-day:hover {
+    background-color: #357abd;
+}
+
+.planner-view-content {
+    max-height: calc(100vh - 300px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 10px;
+}
+
+.planner-hourly-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+}
+
+.planner-hour-slot {
+    background-color: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 12px;
+    transition: all 0.2s;
+}
+
+.planner-hour-slot:hover {
+    border-color: #4a90e2;
+    box-shadow: 0 2px 4px rgba(74, 144, 226, 0.1);
+}
+
+.planner-hour-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.planner-hour-time {
+    font-weight: bold;
+    color: #4a90e2;
+    font-size: 14px;
+}
+
+.planner-edit-btn {
+    background-color: #4a90e2;
+    color: white;
+    border: none;
+    padding: 4px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background-color 0.3s;
+}
+
+.planner-edit-btn:hover {
+    background-color: #357abd;
+}
+
+.planner-hour-content {
+    min-height: 30px;
+}
+
+.planner-plan-item {
+    padding: 6px;
+    margin-bottom: 4px;
+    background-color: #e8f4f8;
+    border-radius: 4px;
+    border-left: 3px solid #4a90e2;
+    font-size: 13px;
+}
+
+.planner-note-item {
+    padding: 6px;
+    margin-bottom: 4px;
+    background-color: #fff9e6;
+    border-radius: 4px;
+    border-left: 3px solid #f39c12;
+    font-size: 13px;
+}
+
+.planner-empty {
+    color: #999;
+    font-style: italic;
+    font-size: 12px;
+    padding: 4px;
+}
+
+.planner-tasks-section,
+.planner-notes-section {
+    margin-top: 30px;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #4a90e2;
+}
+
+.planner-tasks-section h3,
+.planner-notes-section h3 {
+    color: #2c3e50;
+    margin-bottom: 15px;
+}
+
+.planner-task-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    margin-bottom: 6px;
+    background-color: white;
+    border-radius: 4px;
+}
+
+.planner-task-item.completed {
+    opacity: 0.6;
+    text-decoration: line-through;
+}
+
+.planner-task-item.urgent {
+    background-color: #ffe6e6;
+    border-left: 3px solid #e74c3c;
+}
+
+.planner-notes-content {
+    background-color: white;
+    padding: 15px;
+    border-radius: 4px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+body.dark-mode .planner-view-header {
+    background-color: #2c2c2c;
+}
+
+body.dark-mode .planner-hour-slot {
+    background-color: #2c2c2c;
+    border-color: #444;
+}
+
+body.dark-mode .planner-plan-item {
+    background-color: #1a2a3a;
+    color: #e0e0e0;
+}
+
+body.dark-mode .planner-note-item {
+    background-color: #3a2a1a;
+    color: #e0e0e0;
+}
+
+body.dark-mode .planner-tasks-section,
+body.dark-mode .planner-notes-section {
+    background-color: #2c2c2c;
+}
+
+body.dark-mode .planner-task-item {
+    background-color: #333;
+}
+
+body.dark-mode .planner-notes-content {
+    background-color: #333;
+    color: #e0e0e0;
 }
 
 /* Responsive */
